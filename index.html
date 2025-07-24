@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "1.5V তড়িচ্চালক বল ও 2Ω অভ্যন্তরীণ রোধের দুটি কোষকে সমান্তরালে রেখে বহির্বর্তনীর 2Ω রোধের সঙ্গে যুক্ত করা হলো। বহির্বর্তনীতে প্রবাহ কত?",
+          options: {
+            a: "1/3 A",
+            b: "1/6 A",
+            c: "1/2 A",
+            d: "1 A",
+          },
+          correct: "c",
+          explanation:
+            "চলো, আমরা ধাপে ধাপে সমস্যাটি সমাধান করি:<br><br><b>১. তুল্য তড়িচ্চালক বল (E<sub>eq</sub>) নির্ণয়:</b><br>দুটি অভিন্ন কোষকে সমান্তরালে রাখলে, তুল্য তড়িচ্চালক বল প্রতিটি কোষের তড়িচ্চালক বলের সমান হয়।<br>অর্থাৎ, E<sub>eq</sub> = 1.5 V<br><br><b>২. তুল্য অভ্যন্তরীণ রোধ (r<sub>eq</sub>) নির্ণয়:</b><br>অভ্যন্তরীণ রোধ r = 2Ω এবং কোষের সংখ্যা n = 2।<br>সমান্তরাল সমবায়ে তুল্য অভ্যন্তরীণ রোধের সূত্র হলো: r<sub>eq</sub> = r/n<br>এখানে, r<sub>eq</sub> = 2Ω / 2 = 1Ω<br><br><b>৩. বর্তনীর মোট রোধ (R<sub>total</sub>) নির্ণয়:</b><br>বহির্বর্তনীর রোধ (R) = 2Ω<br>মোট রোধ = বহির্বর্তনীর রোধ + তুল্য অভ্যন্তরীণ রোধ<br>R<sub>total</sub> = R + r<sub>eq</sub> = 2Ω + 1Ω = 3Ω<br><br><b>৪. বহির্বর্তনীতে মোট প্রবাহ (I) নির্ণয়:</b><br>ও'মের সূত্র অনুযায়ী, প্রবাহ (I) = তুল্য তড়িচ্চালক বল (E<sub>eq</sub>) / মোট রোধ (R<sub>total</sub>)<br>I = 1.5 V / 3Ω<br>I = 0.5 A<br>I = 1/2 A<br><br>সুতরাং, বহির্বর্তনীতে প্রবাহ হবে 1/2 A।",
+        },
+        {
+          id: 2,
+          question:
+            "কোনো বাল্বের ফিলামেন্টের রোধ 50Ω। এর দুই প্রান্তের বিভব পার্থক্য 200 V হলে, এর মধ্য দিয়ে কত তড়িৎ প্রবাহিত হবে?",
+          options: {
+            a: "2 A",
+            b: "4 A",
+            c: "6 A",
+            d: "8 A",
+          },
+          correct: "b",
+          explanation:
+            "ওহমের সূত্র (Ohm's Law) অনুযায়ী, তড়িৎ প্রবাহ (I) = বিভব পার্থক্য (V) / রোধ (R)।<br>এখানে, V = 200 V এবং R = 50 Ω।<br>সুতরাং, I = 200 V / 50 Ω = 4 A।<br><br>বাল্বের মধ্য দিয়ে 4 অ্যাম্পিয়ার তড়িৎ প্রবাহিত হবে।",
+        },
+        {
+          id: 3,
+          question:
+            "যদি 5A তড়িৎ 3 ঘন্টা ধরে একটি বাতির মধ্যে দিয়ে প্রবাহিত হয় তাহলে ঐ বাতির মধ্য দিয়ে প্রবাহিত চার্জের মান-",
+          options: {
+            a: "3.6 x 10³ C",
+            b: "5.4 x 10⁴ C",
+            c: "1.4 x 10³ C",
+            d: "3.6 x 10⁴ C",
+          },
+          correct: "b",
+          explanation:
+            "তড়িৎ প্রবাহের সংজ্ঞা অনুযায়ী, চার্জ (Q) = প্রবাহমাত্রা (I) × সময় (t)।<br>এখানে, I = 5 A।<br>সময় t = 3 ঘণ্টা = 3 × 60 মিনিট = 3 × 60 × 60 সেকেন্ড = 10800 সেকেন্ড।<br>সুতরাং, Q = 5 A × 10800 s = 54000 কুলম্ব (C) = 5.4 × 10⁴ C।",
+        },
+        {
+          id: 4,
+          question:
+            "5Ω রোধকের মধ্য দিয়ে প্রতি মিনিটে 720 C চার্জ প্রবাহিত হলে রোধকের প্রান্তদ্বয়ের বিভব পার্থক্য কত হবে?",
+          options: {
+            a: "6 V",
+            b: "12 V",
+            c: "48 V",
+            d: "60 V",
+          },
+          correct: "d",
+          explanation:
+            "প্রথমে, রোধকের মধ্য দিয়ে প্রবাহিত তড়িৎ প্রবাহ (I) নির্ণয় করি:<br>I = চার্জ (Q) / সময় (t)।<br>এখানে, Q = 720 C এবং t = 1 মিনিট = 60 সেকেন্ড।<br>সুতরাং, I = 720 C / 60 s = 12 A।<br><br>এখন, ওহমের সূত্র অনুযায়ী বিভব পার্থক্য (V) = প্রবাহমাত্রা (I) × রোধ (R)।<br>এখানে, I = 12 A এবং R = 5 Ω।<br>সুতরাং, V = 12 A × 5 Ω = 60 V।",
+        },
+        {
+          id: 5,
+          question:
+            "কোনো বাল্বের ফিলামেন্টের রোধ 50Ω এবং এর দুই প্রান্তের বিভব পার্থক্য 250 V হলে, এর মধ্য দিয়ে কত তড়িৎ প্রবাহিত হবে?",
+          options: {
+            a: "2 A",
+            b: "4 A",
+            c: "5 A",
+            d: "8 A",
+          },
+          correct: "c",
+          explanation:
+            "ওহমের সূত্র (Ohm's Law) অনুযায়ী, তড়িৎ প্রবাহ (I) = বিভব পার্থক্য (V) / রোধ (R)।<br>এখানে, V = 250 V এবং R = 50 Ω।<br>সুতরাং, I = 250 V / 50 Ω = 5 A।<br><br>বাল্বের মধ্য দিয়ে 5 অ্যাম্পিয়ার তড়িৎ প্রবাহিত হবে।",
+        },
+        {
+          id: 6,
+          question:
+            "প্রস্থচ্ছেদের ক্ষেত্রফল দ্বিগুণ করা হলে রোধের পরিমাণ কত হবে?",
+          options: {
+            a: "তিনগুণ",
+            b: "চারগুণ",
+            c: "অর্ধেক",
+            d: "দ্বিগুণ",
+          },
+          correct: "c",
+          explanation:
+            "একটি পরিবাহীর রোধ (R) তার প্রস্থচ্ছেদের ক্ষেত্রফল (A) এর ব্যস্তানুপাতিক।<br>রোধের সূত্র হলো R = ρL/A, যেখানে ρ হলো আপেক্ষিক রোধ এবং L হলো দৈর্ঘ্য।<br><br>যদি প্রস্থচ্ছেদের ক্ষেত্রফল দ্বিগুণ করা হয় (অর্থাৎ A' = 2A), এবং দৈর্ঘ্য ও উপাদানের পরিবর্তন না হয়, তাহলে নতুন রোধ (R') হবে:<br>R' = ρL / A' = ρL / (2A) = (1/2) × (ρL/A) = R/2।<br><br>অর্থাৎ, রোধের পরিমাণ <b>অর্ধেক</b> হবে।",
+        },
+        {
+          id: 7,
+          question:
+            "একটি ধাতব রোধের উষ্ণতা 10°C হতে 100°C পর্যন্ত বৃদ্ধি পেলে এর রোধ 10% বাড়ে। ধাতুটির রোধের উষ্ণতা গুণাঙ্ক কত?",
+          options: {
+            a: "0.02°C⁻¹",
+            b: "0.002°C⁻¹",
+            c: "0.01°C⁻¹",
+            d: "0.001°C⁻¹",
+          },
+          correct: "d",
+          explanation:
+            "আমরা জানি, R<sub>θ</sub> = R₀(1 + αθ), যেখানে R₀ হলো 0°C তাপমাত্রায় রোধ, R<sub>θ</sub> হলো θ°C তাপমাত্রায় রোধ এবং α হলো রোধের উষ্ণতা গুণাঙ্ক।<br><br>এখানে প্রাথমিক তাপমাত্রা t₁ = 10°C এবং চূড়ান্ত তাপমাত্রা t₂ = 100°C।<br>ধরি, 10°C তাপমাত্রায় রোধ R₁₀।<br>প্রশ্নানুসারে, 100°C তাপমাত্রায় রোধ R₁₀₀ = R₁₀ + 10% of R₁₀ = R₁₀ (1 + 0.10) = 1.1 R₁₀।<br><br>রোধের উষ্ণতা গুণাঙ্কের সূত্র ব্যবহার করে: α = (R₂ - R₁) / (R₁ * (t₂ - t₁))<br>এখানে R₁ = R₁₀ এবং R₂ = R₁₀₀।<br>Δt = t₂ - t₁ = 100°C - 10°C = 90°C।<br><br>সুতরাং, α = (1.1 R₁₀ - R₁₀) / (R₁₀ × 90) = (0.1 R₁₀) / (90 R₁₀) = 0.1 / 90 ≈ 0.00111... °C⁻¹।<br><br>বিকল্পগুলির মধ্যে, <b>0.001°C⁻¹</b> সবচেয়ে কাছাকাছি এবং প্রচলিত মান হিসেবে সঠিক।",
+        },
+        {
+          id: 8,
+          question:
+            "একটি তারের রোধ 2 ও’ম। এ তারটির উপাদান ঠিক রেখে দৈর্ঘ্য দ্বিগুণ করে যে রোধ পাওয়া যাবে-",
+          options: {
+            a: "1 ও’ম",
+            b: "2 ও’ম",
+            c: "4 ও’ম",
+            d: "3 ও’ম",
+          },
+          correct: "c",
+          explanation:
+            "একটি পরিবাহীর রোধ (R) তার দৈর্ঘ্যের (L) সমানুপাতিক।<br>রোধের সূত্র R = ρL/A, যেখানে ρ হলো আপেক্ষিক রোধ এবং A হলো প্রস্থচ্ছেদের ক্ষেত্রফল।<br><br>যদি তারের দৈর্ঘ্য দ্বিগুণ করা হয় (L' = 2L) এবং প্রস্থচ্ছেদের ক্ষেত্রফল অপরিবর্তিত থাকে, তাহলে নতুন রোধ (R') হবে:<br>R' = ρ(2L)/A = 2(ρL/A) = 2R।<br><br>দেওয়া আছে, প্রাথমিক রোধ R = 2 Ω।<br>সুতরাং, নতুন রোধ R' = 2 × 2 Ω = <b>4 Ω</b>।",
+        },
+        {
+          id: 9,
+          question:
+            "সমান রোধবিশিষ্ট দুটি তামার তারের দৈর্ঘ্য যথাক্রমে 1m ও 9m। তার দুটির ব্যাসার্ধের অনুপাত হবে -",
+          options: {
+            a: "3 : 1",
+            b: "1 : 3",
+            c: "9 : 1",
+            d: "1 : 9",
+          },
+          correct: "b",
+          explanation:
+            "একটি তারের রোধের সূত্র হলো R = ρL/A, যেখানে A = πr² (r হলো ব্যাসার্ধ)।<br>সুতরাং, R = ρL/(πr²)।<br><br>প্রথম তারের জন্য: R₁ = ρL₁/(πr₁²) = ρ(1)/(πr₁²)<br>দ্বিতীয় তারের জন্য: R₂ = ρL₂/(πr₂²) = ρ(9)/(πr₂²)<br><br>প্রশ্নানুসারে, রোধ দুটি সমান, অর্থাৎ R₁ = R₂।<br>ρ(1)/(πr₁²) = ρ(9)/(πr₂²)<br>1/r₁² = 9/r₂²<br>r₂²/r₁² = 9/1<br>(r₂/r₁)² = 9<br>r₂/r₁ = 3<br><br>সুতরাং, r₁/r₂ = 1/3।<br>তার দুটির ব্যাসার্ধের অনুপাত <b>1 : 3</b>।",
+        },
+        {
+          id: 10,
+          question:
+            "0°C তাপমাত্রায় একটি কয়েলের রোধ 2Ω এবং রোধের উষ্ণতা গুণাঙ্ক α = 0.004/°C হলে, 100°C তাপমাত্রায় কয়েলের রোধ হবে-",
+          options: {
+            a: "1.4Ω",
+            b: "0.2Ω",
+            c: "4.2Ω",
+            d: "2.8Ω",
+          },
+          correct: "d",
+          explanation:
+            "রোধের তাপমাত্রা নির্ভরতার সূত্রটি হলো: R<sub>θ</sub> = R₀(1 + αθ)<br>যেখানে, R<sub>θ</sub> = θ°C তাপমাত্রায় রোধ<br>R₀ = 0°C তাপমাত্রায় রোধ = 2 Ω<br>α = রোধের উষ্ণতা গুণাঙ্ক = 0.004 /°C<br>θ = তাপমাত্রা বৃদ্ধি = 100°C - 0°C = 100°C<br><br>সুতরাং, R₁₀₀ = 2(1 + 0.004 × 100)<br>R₁₀₀ = 2(1 + 0.4)<br>R₁₀₀ = 2(1.4)<br>R₁₀₀ = <b>2.8 Ω</b>।",
+        },
+        {
+          id: 11,
+          question:
+            "একটি নলাকার তামার তারের রোধ R। আয়তন সমান রেখে তারটির দৈর্ঘ্য দ্বিগুণ করা হলে পরিবর্তিত রোধ কত?",
+          options: {
+            a: "2R",
+            b: "4R",
+            c: "8R",
+            d: "R/2",
+          },
+          correct: "b",
+          explanation:
+            "একটি তারের রোধ (R) = ρL/A, যেখানে ρ হলো আপেক্ষিক রোধ, L হলো দৈর্ঘ্য এবং A হলো প্রস্থচ্ছেদের ক্ষেত্রফল।<br>তারের আয়তন (V) = A × L।<br>যদি আয়তন স্থির থাকে, তাহলে A = V/L।<br><br>সুতরাং, রোধের সূত্রটি নতুনভাবে লেখা যায়:<br>R = ρL / (V/L) = ρL²/V।<br><br>এখন, যদি দৈর্ঘ্য দ্বিগুণ করা হয় (L' = 2L) এবং আয়তন (V) স্থির থাকে, তাহলে নতুন রোধ (R') হবে:<br>R' = ρ(2L)²/V = ρ(4L²)/V = 4(ρL²/V) = 4R।<br><br>সুতরাং, পরিবর্তিত রোধ <b>4R</b> হবে।",
+        },
+        {
+          id: 12,
+          question:
+            "একটি তামার তারের রোধ 2R। আয়তন সমান রেখে তারটির দৈর্ঘ্য দ্বিগুণ করা হলে, পরিবর্তিত রোধ কত?",
+          options: {
+            a: "R",
+            b: "2R",
+            c: "4R",
+            d: "8R",
+          },
+          correct: "d",
+          explanation:
+            "আগের ব্যাখ্যা অনুযায়ী, যদি আয়তন সমান রেখে তারের দৈর্ঘ্য দ্বিগুণ করা হয়, তাহলে রোধ ৪ গুণ বৃদ্ধি পায়।<br><br>প্রাথমিক রোধ R<sub>initial</sub> = 2R।<br>যদি দৈর্ঘ্য দ্বিগুণ করা হয়, নতুন রোধ R<sub>final</sub> = 4 × R<sub>initial</sub>।<br>সুতরাং, R<sub>final</sub> = 4 × (2R) = <b>8R</b>।",
+        },
+        {
+          id: 13,
+          question:
+            "l দীর্ঘ একটি তারকে টেনে ওর ব্যাসার্ধ প্রাথমিক ব্যাসার্ধের অর্ধেক করা হলো। তারটির প্রাথমিক রোধ 10Ω হলে এর নতুন রোধ-",
+          options: {
+            a: "160Ω",
+            b: "120Ω",
+            c: "80Ω",
+            d: "40Ω",
+          },
+          correct: "a",
+          explanation:
+            "যখন একটি তারকে টেনে তার দৈর্ঘ্য বা ব্যাসার্ধ পরিবর্তন করা হয়, তখন তার আয়তন স্থির থাকে।<br>প্রাথমিক রোধ R = ρL/A = ρL/(πr²)।<br>যদি ব্যাসার্ধ r' = r/2 হয়, তাহলে নতুন প্রস্থচ্ছেদের ক্ষেত্রফল A' = π(r/2)² = πr²/4 = A/4।<br><br>যেহেতু আয়তন স্থির থাকে (V = AL = A'L'), তাই L' = AL/A' = AL/(A/4) = 4L।<br>অর্থাৎ, দৈর্ঘ্য ৪ গুণ বেড়ে যাবে।<br><br>নতুন রোধ R' = ρL'/A' = ρ(4L)/(A/4) = 16ρL/A = 16R।<br><br>প্রাথমিক রোধ R = 10 Ω।<br>সুতরাং, নতুন রোধ R' = 16 × 10 Ω = <b>160 Ω</b>।",
+        },
+        {
+          id: 14,
+          question:
+            "l দীর্ঘ এবং d ব্যাসের একটি তারের রোধ R। একই উপাদানের 4l দীর্ঘ এবং 2d ব্যাসের অপর একটি তারের রোধ হবে-",
+          options: {
+            a: "2R",
+            b: "4R",
+            c: "R",
+            d: "R/4",
+          },
+          correct: "c",
+          explanation:
+            "একটি তারের রোধের সূত্র R = ρL/A, যেখানে A = π(d/2)² = πd²/4।<br>সুতরাং, R = ρL/(πd²/4) = 4ρL/(πd²)।<br><br>এখন, দ্বিতীয় তারের জন্য:<br>দৈর্ঘ্য L' = 4L<br>ব্যাস d' = 2d<br><br>নতুন রোধ R' = 4ρL'/(π(d')²) = 4ρ(4L)/(π(2d)²) = 4ρ(4L)/(π4d²) = 16ρL/(4πd²) = 4ρL/(πd²)।<br><br>দেখা যাচ্ছে, R' = R।<br>সুতরাং, নতুন তারের রোধ <b>R</b> হবে।",
+        },
+        {
+          id: 15,
+          question:
+            "কত উষ্ণতায় একটি তামার তারের রোধ 0°C উষ্ণতার ওর রোধের তিনগুণ হয়? রোধের উষ্ণতা গুণাঙ্ক 4 x 10⁻³ °C⁻¹",
+          options: {
+            a: "400°C",
+            b: "450°C",
+            c: "500°C",
+            d: "550°C",
+          },
+          correct: "c",
+          explanation:
+            "রোধের তাপমাত্রা নির্ভরতার সূত্র: R<sub>θ</sub> = R₀(1 + αθ)<br>এখানে, R<sub>θ</sub> = 3R₀।<br>α = 4 × 10⁻³ °C⁻¹।<br>θ = নির্ণেয় তাপমাত্রা।<br><br>3R₀ = R₀(1 + αθ)<br>3 = 1 + αθ<br>2 = αθ<br>θ = 2 / α<br><br>θ = 2 / (4 × 10⁻³) = 2 / 0.004 = 2000 / 4 = <b>500 °C</b>।",
+        },
+        {
+          id: 16,
+          question:
+            "বৃত্তাকার প্রস্থচ্ছেদের কোনো পরিবাহীর ব্যাসার্ধ অর্ধেক করা হলে, রোধ হবে-",
+          options: {
+            a: "এক-চতুর্থাংশ",
+            b: "অর্ধেক",
+            c: "দ্বিগুণ",
+            d: "চারগুণ",
+          },
+          correct: "d",
+          explanation:
+            "একটি পরিবাহীর রোধ (R) তার প্রস্থচ্ছেদের ক্ষেত্রফল (A) এর ব্যস্তানুপাতিক।<br>বৃত্তাকার প্রস্থচ্ছেদের ক্ষেত্রে A = πr², যেখানে r হলো ব্যাসার্ধ।<br>সুতরাং R ∝ 1/r²।<br><br>যদি ব্যাসার্ধ অর্ধেক করা হয় (r' = r/2), তাহলে নতুন রোধ (R') হবে:<br>R' ∝ 1/(r')² = 1/(r/2)² = 1/(r²/4) = 4/r²।<br><br>সুতরাং, R' = 4R।<br>রোধ <b>চারগুণ</b> বৃদ্ধি পাবে।",
+        },
+        {
+          id: 17,
+          question: "একটি তারকে দুই ভাগে ভাগ করলে-",
+          options: {
+            a: "রোধ একই থাকে",
+            b: "আপেক্ষিক রোধ একই থাকে",
+            c: "রোধ আপেক্ষিক রোধের অর্ধেক হয়",
+            d: "বৈদ্যুতিক গুণাবলি নষ্ট হয়ে যায়",
+          },
+          correct: "b",
+          explanation:
+            "<b>আপেক্ষিক রোধ</b> (resistivity) হলো একটি পদার্থের অভ্যন্তরীণ বৈশিষ্ট্য যা তার জ্যামিতিক মাত্রা (দৈর্ঘ্য বা প্রস্থচ্ছেদ) থেকে স্বাধীন।<br>এটি শুধুমাত্র পদার্থের উপাদান এবং তাপমাত্রার উপর নির্ভর করে।<br><br>যদি একটি তারকে দুই ভাগে ভাগ করা হয়, তাহলে তার <b>দৈর্ঘ্য অর্ধেক হয়ে যাবে</b> এবং এর ফলে <b>রোধও অর্ধেক হয়ে যাবে</b> (R ∝ L)।<br>কিন্তু তারের উপাদান এবং তাপমাত্রা অপরিবর্তিত থাকায়, তারের <b>আপেক্ষিক রোধ একই থাকবে</b>।",
+        },
+        {
+          id: 18,
+          question:
+            "দুটি তারের দৈর্ঘ্যের অনুপাত 1:2। যদি একটির আপেক্ষিক রোধ 1Ωm হয়, তাহলে অন্যটির আপেক্ষিক রোধ কত?",
+          options: {
+            a: "0.5Ωm",
+            b: "1Ωm",
+            c: "2Ωm",
+            d: "4Ωm",
+          },
+          correct: "b",
+          explanation:
+            "আপেক্ষিক রোধ (resistivity) হলো একটি পদার্থের নিজস্ব ধর্ম। এটি কোনো তারের <b>দৈর্ঘ্য, প্রস্থচ্ছেদ, বা আকৃতির</b> উপর নির্ভর করে না, শুধুমাত্র <b>উপাদানের প্রকৃতি</b> এবং <b>তাপমাত্রার</b> উপর নির্ভর করে।<br><br>যদি ধরে নেওয়া হয় তার দুটি একই উপাদানের তৈরি এবং একই তাপমাত্রায় আছে, তাহলে তাদের আপেক্ষিক রোধও একই হবে। যেহেতু প্রথম তারটির আপেক্ষিক রোধ 1Ωm, তাই দ্বিতীয় তারটির আপেক্ষিক রোধও 1Ωm হবে।",
+        },
+        {
+          id: 19,
+          question:
+            "একটি বাল্বের বিভব পার্থক্য 2% কমানো হলো। ফিলামেন্টের রোধ একই থাকলে বাল্বের ক্ষমতার শতকরা পরিবর্তন কত?",
+          options: {
+            a: "2% হ্রাস",
+            b: "2% বৃদ্ধি",
+            c: "4% হ্রাস",
+            d: "4% বৃদ্ধি",
+          },
+          correct: "c",
+          explanation:
+            "একটি বাল্বের ক্ষমতা (P) বিভব পার্থক্য (V) এবং রোধ (R) এর সাথে সম্পর্কিত সূত্র P = V²/R।<br>যেহেতু রোধ (R) স্থির, তাই ক্ষমতা বিভব পার্থক্যের বর্গের সমানুপাতিক: P ∝ V²।<br><br>প্রাথমিক বিভব পার্থক্য V এবং প্রাথমিক ক্ষমতা P।<br>নতুন বিভব পার্থক্য V' = V - 2% of V = V(1 - 0.02) = 0.98V।<br>নতুন ক্ষমতা P' = (V')²/R = (0.98V)²/R = 0.9604(V²/R) = 0.9604P।<br><br>ক্ষমতার পরিবর্তন = P - P' = P - 0.9604P = 0.0396P।<br>শতকরা পরিবর্তন = (0.0396P / P) × 100% = 3.96%।<br><br>প্রায় <b>4% হ্রাস</b>।",
+        },
+        {
+          id: 20,
+          question:
+            "একটি 200V-40W বাল্বের মধ্য দিয়ে কী পরিমাণ তড়িৎ প্রবাহিত হবে?",
+          options: {
+            a: "0.05 A",
+            b: "0.5 A",
+            c: "0.02 A",
+            d: "0.2 A",
+          },
+          correct: "d",
+          explanation:
+            "বৈদ্যুতিক ক্ষমতা (P) এর সূত্র হলো P = VI, যেখানে V হলো বিভব পার্থক্য এবং I হলো তড়িৎ প্রবাহ।<br><br>এখানে, P = 40 W এবং V = 200 V।<br>সুতরাং, I = P / V = 40 W / 200 V = 4 / 20 A = 1 / 5 A = <b>0.2 A</b>।",
+        },
+        {
+          id: 21,
+          question:
+            "যদি 100 ওয়াটের একটি বাল্ব প্রতিদিন 5 ঘন্টা করে 30 দিন জ্বালানো হয়, তবে কী পরিমাণ বৈদ্যুতিক শক্তি ব্যবহৃত হবে?",
+          options: {
+            a: "10 kWh",
+            b: "12 kWh",
+            c: "15 kWh",
+            d: "20 kWh",
+          },
+          correct: "c",
+          explanation:
+            "ব্যবহৃত বৈদ্যুতিক শক্তি (E) = ক্ষমতা (P) × সময় (t)।<br><br>ক্ষমতা P = 100 ওয়াট = 0.1 কিলোওয়াট (kW)।<br>মোট সময় t = 5 ঘণ্টা × 30 দিন = 150 ঘণ্টা (h)।<br><br>সুতরাং, E = 0.1 kW × 150 h = <b>15 kWh</b>।",
+        },
+        {
+          id: 22,
+          question:
+            "একটি এনার্জি বাল্বের গায়ে 220V 20W লেখা আছে। বাল্বটির ভেতর দিয়ে তড়িৎ প্রবাহ কত?",
+          options: {
+            a: "1/10 A",
+            b: "1/11 A",
+            c: "1/2 A",
+            d: "1/12 A",
+          },
+          correct: "b",
+          explanation:
+            "বৈদ্যুতিক ক্ষমতা (P) এর সূত্র হলো P = VI, যেখানে V হলো বিভব পার্থক্য এবং I হলো তড়িৎ প্রবাহ।<br><br>এখানে, P = 20 W এবং V = 220 V।<br>সুতরাং, I = P / V = 20 W / 220 V = 2 / 22 A = <b>1 / 11 A</b>।",
+        },
+        {
+          id: 23,
+          question:
+            "250V সম্পন্ন বিদ্যুৎ লাইনের সাথে সংযুক্ত একটি হিটারের কাজ করতে হলে 8A বিদ্যুতের প্রয়োজন হয়। হিটারের শক্তি কত?",
+          options: {
+            a: "500 W",
+            b: "2000 W",
+            c: "1 kW",
+            d: "5 kW",
+          },
+          correct: "b",
+          explanation:
+            "হিটারের শক্তি বা ক্ষমতা (P) = বিভব পার্থক্য (V) × তড়িৎ প্রবাহ (I)।<br>এখানে, V = 250 V এবং I = 8 A।<br>সুতরাং, P = 250 V × 8 A = 2000 ওয়াট (W)।",
+        },
+        {
+          id: 24,
+          question:
+            "একটি বৈদ্যুতিক হিটার 220 volt সরবরাহ লাইন হতে 4 Amp প্রবাহ গ্রহণ করে। হিটারটি 400 ঘন্টা ব্যবহার করলে কত kWh ব্যয় হবে?",
+          options: {
+            a: "176",
+            b: "352",
+            c: "22",
+            d: "44",
+          },
+          correct: "b",
+          explanation:
+            "প্রথমে হিটারের ক্ষমতা (P) নির্ণয় করি:<br>P = V × I = 220 V × 4 A = 880 ওয়াট (W)।<br><br>ব্যবহৃত শক্তি (E) = ক্ষমতা (P) × সময় (t)।<br>সময় t = 400 ঘণ্টা।<br><br>শক্তিকে কিলোওয়াট-ঘণ্টা (kWh) তে রূপান্তর করতে হবে:<br>P = 880 W = 0.880 kW।<br><br>E = 0.880 kW × 400 h = <b>352 kWh</b>।",
+        },
+        {
+          id: 25,
+          question:
+            "1200W এর একটি ইস্ত্রি 30 মিনিট সময় কাজ করলে ব্যবহৃত তড়িৎ শক্তি কত হবে?",
+          options: {
+            a: "0.6 kWh",
+            b: "36 kWh",
+            c: "600 kWh",
+            d: "3600 kWh",
+          },
+          correct: "a",
+          explanation:
+            "ব্যবহৃত তড়িৎ শক্তি (E) = ক্ষমতা (P) × সময় (t)।<br><br>ক্ষমতা P = 1200 W = 1.2 কিলোওয়াট (kW)।<br>সময় t = 30 মিনিট = 0.5 ঘণ্টা (h)।<br><br>সুতরাং, E = 1.2 kW × 0.5 h = <b>0.6 kWh</b>।",
+        },
+        {
+          id: 26,
+          question:
+            "যখন 8mC চার্জ 12V বিভব পার্থক্য অতিক্রম করে তখন কী পরিমাণ বিদ্যুৎ শক্তি রূপান্তরিত হয়?",
+          options: {
+            a: "96 J",
+            b: "48 J",
+            c: "0.096 J",
+            d: "0.048 J",
+          },
+          correct: "c",
+          explanation:
+            "বিদ্যুৎ শক্তি (W) বা কাজ = চার্জ (Q) × বিভব পার্থক্য (V)।<br>এখানে, Q = 8 mC = 8 × 10⁻³ কুলম্ব (C)।<br>V = 12 V।<br><br>সুতরাং, W = (8 × 10⁻³ C) × 12 V = 96 × 10⁻³ জুল (J) = <b>0.096 J</b>।",
+        },
+        {
+          id: 27,
+          question:
+            "কোনো বাড়ির প্রধান মিটারে 6A - 220 volt লেখা আছে। 90 watt-এর কতগুলি বাল্ব নিরাপদে ব্যবহার করা যাবে?",
+          options: {
+            a: "14",
+            b: "12",
+            c: "10",
+            d: "8",
+          },
+          correct: "a",
+          explanation:
+            "বাড়ির প্রধান মিটারের সর্বোচ্চ ক্ষমতা (P<sub>max</sub>) = সর্বোচ্চ প্রবাহ (I<sub>max</sub>) × ভোল্টেজ (V)।<br>P<sub>max</sub> = 6 A × 220 V = 1320 ওয়াট (W)।<br><br>প্রতিটি বাল্বের ক্ষমতা P<sub>bulb</sub> = 90 ওয়াট।<br><br>বাল্বের সংখ্যা = P<sub>max</sub> / P<sub>bulb</sub> = 1320 W / 90 W ≈ 14.66।<br><br>যেহেতু বাল্বের সংখ্যা পূর্ণসংখ্যা হতে হবে এবং নিরাপদে ব্যবহারের জন্য সর্বোচ্চ সংখ্যা নির্ণয় করতে হবে, তাই দশমিকের পরের অংশ বাদ দিতে হবে।<br>সুতরাং, নিরাপদে <b>14 টি</b> বাল্ব ব্যবহার করা যাবে।",
+        },
+        {
+          id: 28,
+          question:
+            "কোনো বাড়ির মেইন মিটারে 6A - 220V চিহ্নিত করা আছে। কতগুলো 100 W-এর বাতি ব্যবহার করা যাবে?",
+          options: {
+            a: "13",
+            b: "12",
+            c: "10",
+            d: "8",
+          },
+          correct: "a",
+          explanation:
+            "বাড়ির প্রধান মিটারের সর্বোচ্চ ক্ষমতা (P<sub>max</sub>) = সর্বোচ্চ প্রবাহ (I<sub>max</sub>) × ভোল্টেজ (V)।<br>P<sub>max</sub> = 6 A × 220 V = 1320 ওয়াট (W)।<br><br>প্রতিটি বাল্বের ক্ষমতা P<sub>bulb</sub> = 100 ওয়াট।<br><br>বাল্বের সংখ্যা = P<sub>max</sub> / P<sub>bulb</sub> = 1320 W / 100 W = 13.2।<br><br>যেহেতু বাল্বের সংখ্যা পূর্ণসংখ্যা হতে হবে এবং নিরাপদে ব্যবহারের জন্য সর্বোচ্চ সংখ্যা নির্ণয় করতে হবে, তাই দশমিকের পরের অংশ বাদ দিতে হবে।<br>সুতরাং, নিরাপদে <b>13 টি</b> বাল্ব ব্যবহার করা যাবে।",
+        },
+        {
+          id: 29,
+          question:
+            "210W ক্ষমতার একটি বাল্ব 5 মিনিটে কত ক্যালরি তাপ উৎপন্ন করবে?",
+          options: {
+            a: "1500",
+            b: "15000",
+            c: "63000",
+            d: "80000",
+          },
+          correct: "b",
+          explanation:
+            "উৎপন্ন শক্তি (E) = ক্ষমতা (P) × সময় (t)।<br>এখানে, P = 210 W।<br>সময় t = 5 মিনিট = 5 × 60 = 300 সেকেন্ড।<br><br>E = 210 W × 300 s = 63000 জুল (J)।<br><br>আমরা জানি, 1 ক্যালরি ≈ 4.2 জুল।<br>উৎপন্ন তাপ (ক্যালরিতে) = 63000 J / 4.2 J/cal = <b>15000 ক্যালরি</b>।",
+        },
+        {
+          id: 30,
+          question:
+            "2Ω এবং 4Ω রোধের দুটি তারকে শ্রেণি সমবায়ে যুক্ত করে সমবায়টির দুই প্রান্তে V বিভব পার্থক্য প্রয়োগ করা হলো। রোধ দুটিতে উৎপন্ন ক্ষমতা তুলনা কর।",
+          options: {
+            a: "1:2",
+            b: "2:1",
+            c: "4:1",
+            d: "1:4",
+          },
+          correct: "a",
+          explanation:
+            "শ্রেণি সমবায়ে, প্রতিটি রোধের মধ্য দিয়ে <b>একই তড়িৎ প্রবাহ (I)</b> প্রবাহিত হয়।<br>উৎপন্ন ক্ষমতা (P) = I²R।<br><br>2Ω রোধের জন্য ক্ষমতা P₁ = I² × 2।<br>4Ω রোধের জন্য ক্ষমতা P₂ = I² × 4।<br><br>ক্ষমতার অনুপাত P₁ : P₂ = (I² × 2) : (I² × 4) = 2 : 4 = <b>1 : 2</b>।",
+        },
+        {
+          id: 31,
+          question:
+            "দুটি বাল্বের রোধের অনুপাত 1:2। এদের সমান্তরালে যুক্ত করে একটি স্থির মানের বিভব পার্থinky করা হলো। বাল্ব দুটিতে উৎপন্ন ক্ষমতার অনুপাত-",
+          options: {
+            a: "1:2",
+            b: "1:1",
+            c: "2:1",
+            d: "1:4",
+          },
+          correct: "c",
+          explanation:
+            "সমান্তরাল সমবায়ে, বাল্ব দুটির <b>প্রান্তদ্বয়ের বিভব পার্থক্য (V) স্থির</b> থাকে।<br>ক্ষমতা (P) = V²/R।<br><br>যদি রোধের অনুপাত R₁ : R₂ = 1 : 2 হয়, ধরি R₁ = k এবং R₂ = 2k।<br><br>প্রথম বাল্বের ক্ষমতা P₁ = V²/R₁ = V²/k।<br>দ্বিতীয় বাল্বের ক্ষমতা P₂ = V²/R₂ = V²/(2k)。<br><br>ক্ষমতার অনুপাত P₁ : P₂ = (V²/k) : (V²/(2k)) = 1 : 1/2 = <b>2 : 1</b>।",
+        },
+        {
+          id: 32,
+          question:
+            "একটি বাল্বের প্রবাহমাত্রা 4% বাড়ানো হলো। ফিলামেন্টের রোধ একই থাকলে উৎপন্ন ক্ষমতার শতকরা পরিবর্তন কত হবে?",
+          options: {
+            a: "4%",
+            b: "8%",
+            c: "0.04%",
+            d: "0.08%",
+          },
+          correct: "b",
+          explanation:
+            "উৎপন্ন ক্ষমতা (P) = I²R।<br>যেহেতু রোধ (R) স্থির, তাই P ∝ I²।<br><br>প্রাথমিক প্রবাহমাত্রা I এবং প্রাথমিক ক্ষমতা P।<br>নতুন প্রবাহমাত্রা I' = I + 4% of I = 1.04I।<br>নতুন ক্ষমতা P' = (I')²R = (1.04I)²R = 1.0816(I²R) = 1.0816P।<br><br>ক্ষমতার পরিবর্তন = P' - P = 1.0816P - P = 0.0816P।<br>শতকরা পরিবর্তন = (0.0816P / P) × 100% = 8.16%।<br><br>প্রায় <b>8% বৃদ্ধি</b>।",
+        },
+        {
+          id: 33,
+          question:
+            "60W - 220V এবং 60W - 110V লেখা বাল্ব দুটির রোধের অনুপাত কত?",
+          options: {
+            a: "1:1",
+            b: "2:1",
+            c: "1:4",
+            d: "4:1",
+          },
+          correct: "d",
+          explanation:
+            "ক্ষমতা (P) = V²/R। সুতরাং, রোধ (R) = V²/P।<br><br>প্রথম বাল্বের জন্য: R₁ = (220)² / 60<br>দ্বিতীয় বাল্বের জন্য: R₂ = (110)² / 60<br><br>রোধের অনুপাত R₁ : R₂ = [(220)² / 60] : [(110)² / 60]<br>= (220)² : (110)²<br>= (2 × 110)² : (110)²<br>= 4 × (110)² : (110)²<br>= <b>4 : 1</b>।",
+        },
+        {
+          id: 34,
+          question:
+            "একটি 1200 ওয়াট হিটারকে 120V লাইনে 1 ঘণ্টার জন্য সংযুক্ত করা হলে ঐ হিটারে কী পরিমাণ বিদ্যুৎ প্রবাহ চলবে?",
+          options: {
+            a: "5 A",
+            b: "10 A",
+            c: "100 A",
+            d: "20 A",
+          },
+          correct: "b",
+          explanation:
+            "বৈদ্যুতিক ক্ষমতা (P) এর সূত্র P = VI, যেখানে V হলো বিভব পার্থক্য এবং I হলো তড়িৎ প্রবাহ।<br><br>এখানে, P = 1200 W এবং V = 120 V।<br>সুতরাং, I = P / V = 1200 W / 120 V = <b>10 A</b>।",
+        },
+        {
+          id: 35,
+          question:
+            "একটি ইলেকট্রিক মোটরের ক্ষমতা 1 অশ্বশক্তি। যখন এটিকে 220V সরবরাহ লাইনের সাথে সংযোগ দেওয়া হয় তখন এর মধ্য দিয়ে কত বিদ্যুৎ প্রবাহিত হবে?",
+          options: {
+            a: "3.39 A",
+            b: "1.70 A",
+            c: "0.424 A",
+            d: "0.122 A",
+          },
+          correct: "a",
+          explanation:
+            "<b>ধাপ ১: অশ্বশক্তিকে ওয়াটে রূপান্তর</b><br>1 অশ্বশক্তি (Horsepower, hp) = 746 ওয়াট (W)।<br>সুতরাং, মোটরের ক্ষমতা (P) = 746 W।<br><br><b>ধাপ ২: বিদ্যুৎ প্রবাহ নির্ণয়</b><br>সরবরাহ ভোল্টেজ (V) = 220 V।<br>বিদ্যুৎ প্রবাহ (I) = P / V = 746 W / 220 V ≈ 3.39 A।<br><br>সুতরাং, ইলেকট্রিক মোটরের মধ্য দিয়ে প্রায় <b>3.39 A</b> বিদ্যুৎ প্রবাহিত হবে।",
+        },
+        {
+          id: 36,
+          question:
+            "দুটি 25 W এবং 100 W বৈদ্যুতিক বাল্বকে শ্রেণি সমবায়ে যুক্ত করে তড়িৎ সংযোগ দেওয়া হলো। তাহলে-",
+          options: {
+            a: "100 W বাল্ব উজ্জ্বলতরভাবে জ্বলবে",
+            b: "25 W বাল্ব উজ্জ্বলতরভাবে জ্বলবে",
+            c: "উভয় বাল্ব সমান উজ্জ্বলতায় জ্বলবে",
+            d: "উপরের কোনোটিই নয়",
+          },
+          correct: "b",
+          explanation:
+            "প্রথমে বাল্বগুলির রোধ নির্ণয় করি। ধরে নিই তারা একই রেটিং ভোল্টেজের জন্য ডিজাইন করা।<br>R = V²/P। সুতরাং, কম ওয়াটের বাল্বের রোধ বেশি। R₂₅ > R₁₀₀।<br><br>যখন দুটি বাল্বকে <b>শ্রেণি সমবায়ে</b> যুক্ত করা হয়, তাদের মধ্য দিয়ে <b>একই তড়িৎ প্রবাহ (I)</b> চলে।<br>উৎপন্ন ক্ষমতা P = I²R।<br><br>যেহেতু I উভয় বাল্বের জন্য একই, তাই যে বাল্বের রোধ বেশি (R₂₅), সেটি বেশি তাপ উৎপন্ন করবে এবং বেশি উজ্জ্বলভাবে জ্বলবে।<br>সুতরাং, <b>25 W বাল্বটি উজ্জ্বলতরভাবে জ্বলবে</b>।",
+        },
+        {
+          id: 37,
+          question:
+            "একটি বৈদ্যুতিক বাতি, পাখা ও হিটারের গায়ে যথাক্রমে 100W - 230V, 80W - 230V এবং 1 kW - 230V লেখা আছে। কোনটির রোধ সবচেয়ে কম?",
+          options: {
+            a: "বাতি",
+            b: "পাখা",
+            c: "হিটার",
+            d: "কোনোটিরই নয়",
+          },
+          correct: "c",
+          explanation:
+            "ক্ষমতা (P) = V²/R। সুতরাং, রোধ (R) = V²/P।<br>যেহেতু সকল যন্ত্রের রেটিং ভোল্টেজ (V = 230V) একই, তাই যে যন্ত্রের ক্ষমতা (P) সবচেয়ে বেশি হবে, তার রোধ (R) সবচেয়ে কম হবে।<br><br>বাতি: P = 100 W<br>পাখা: P = 80 W<br>হিটার: P = 1 kW = 1000 W<br><br>যেহেতু হিটারের ক্ষমতা (1000 W) সবচেয়ে বেশি, তাই <b>হিটার</b> এর রোধ সবচেয়ে কম।",
+        },
+        {
+          id: 38,
+          question:
+            "একটি কোষের তড়িচ্চালক বল 1.5V এবং অভ্যন্তরীণ রোধ 1Ω। এটি 14Ω এর একটি বহির্বর্তনীর সাথে যুক্ত করা হলো। টার্মিনাল বিভব পার্থক্য কত?",
+          options: {
+            a: "1.2 V",
+            b: "1.3 V",
+            c: "1.4 V",
+            d: "1.5 V",
+          },
+          correct: "c",
+          explanation:
+            "মোট রোধ = R + r = 14 Ω + 1 Ω = 15 Ω।<br>তড়িৎ প্রবাহ (I) = E / (R + r) = 1.5 V / 15 Ω = 0.1 A।<br><br>টার্মিনাল বিভব পার্থক্য V = E - I × r = 1.5 V - (0.1 A × 1 Ω) = 1.5 V - 0.1 V = <b>1.4 V</b>।",
+        },
+        {
+          id: 39,
+          question:
+            "একটি কোষের তড়িচ্চালক বল 6V এবং অভ্যন্তরীণ রোধ 0.5Ω। এটি 11.5Ω এর একটি বহির্বর্তনীর সাথে যুক্ত করা হলো। টার্মিনাল বিভব পার্থক্য কত?",
+          options: {
+            a: "5 V",
+            b: "5.5 V",
+            c: "6 V",
+            d: "5.75 V",
+          },
+          correct: "d",
+          explanation:
+            "মোট রোধ = R + r = 11.5 Ω + 0.5 Ω = 12 Ω।<br>তড়িৎ প্রবাহ (I) = E / (R + r) = 6 V / 12 Ω = 0.5 A।<br><br>টার্মিনাল বিভব পার্থক্য V = E - I × r = 6 V - (0.5 A × 0.5 Ω) = 6 V - 0.25 V = <b>5.75 V</b>।",
+        },
+        {
+          id: 40,
+          question:
+            "একটি কোষের তড়িচ্চালক বল 12V এবং অভ্যন্তরীণ রোধ 0.5Ω। এটি 23.5Ω এর একটি বহির্বর্তনীর সাথে যুক্ত করা হলো। টার্মিনাল বিভব পার্থক্য কত?",
+          options: {
+            a: "11 V",
+            b: "11.75 V",
+            c: "12 V",
+            d: "10.5 V",
+          },
+          correct: "b",
+          explanation:
+            "মোট রোধ = R + r = 23.5 Ω + 0.5 Ω = 24 Ω।<br>তড়িৎ প্রবাহ (I) = E / (R + r) = 12 V / 24 Ω = 0.5 A।<br><br>টার্মিনাল বিভব পার্থক্য V = E - I × r = 12 V - (0.5 A × 0.5 Ω) = 12 V - 0.25 V = <b>11.75 V</b>।",
+        },
+        {
+          id: 41,
+          question:
+            "দুটি কোষের প্রত্যেকটির তড়িচ্চালক বল 2V এবং অভ্যন্তরীণ রোধ 1Ω। এদের সমান্তরালে যুক্ত করে 3Ω এর বহির্বর্তনীর সাথে সংযুক্ত করা হলো। বহির্বর্তনীতে তড়িৎ প্রবাহ কত?",
+          options: {
+            a: "0.57 A",
+            b: "0.4 A",
+            c: "0.3 A",
+            d: "0.2 A",
+          },
+          correct: "a",
+          explanation:
+            "সমান্তরাল সমবায়ে, তুল্য তড়িচ্চালক বল E_eq = 2 V।<br>তুল্য অভ্যন্তরীণ রোধ r_eq = r / n = 1 Ω / 2 = 0.5 Ω।<br>বহির্বর্তনীর রোধ R = 3 Ω।<br><br>মোট রোধ = R + r_eq = 3 Ω + 0.5 Ω = 3.5 Ω।<br>তড়িৎ প্রবাহ (I) = E_eq / (R + r_eq) = 2 V / 3.5 Ω ≈ <b>0.57 A</b>।",
+        },
+        {
+          id: 42,
+          question:
+            "দুটি কোষের প্রত্যেকটির তড়িচ্চালক বল 12V এবং অভ্যন্তরীণ রোধ 0.5Ω। এদের শ্রেণি সমবায়ে যুক্ত করে 23.5Ω এর বহির্বর্তনীর সাথে সংযুক্ত করা হলো। বহির্বর্তনীতে তড়িৎ প্রবাহ কত?",
+          options: {
+            a: "0.98 A",
+            b: "0.4 A",
+            c: "0.3 A",
+            d: "0.2 A",
+          },
+          correct: "a",
+          explanation:
+            "শ্রেণি সমবায়ে, তুল্য তড়িচ্চালক বল E_eq = 12 V + 12 V = 24 V।<br>তুল্য অভ্যন্তরীণ রোধ r_eq = 0.5 Ω + 0.5 Ω = 1 Ω।<br>বহির্বর্তনীর রোধ R = 23.5 Ω।<br><br>মোট রোধ = R + r_eq = 23.5 Ω + 1 Ω = 24.5 Ω।<br>তড়িৎ প্রবাহ (I) = E_eq / (R + r_eq) = 24 V / 24.5 Ω ≈ <b>0.98 A</b>।",
+        },
+        {
+          id: 43,
+          question:
+            "দুটি কোষের তড়িচ্চালক বল যথাক্রমে 4V এবং 2V এবং অভ্যন্তরীণ রোধ যথাক্রমে 1Ω এবং 0.5Ω। এদের শ্রেণি সমবায়ে যুক্ত করে 9.5Ω এর বহির্বর্তনীর সাথে সংযুক্ত করা হলো। বহির্বর্তনীতে তড়িৎ প্রবাহ কত?",
+          options: {
+            a: "0.55 A",
+            b: "0.4 A",
+            c: "0.3 A",
+            d: "0.2 A",
+          },
+          correct: "a",
+          explanation:
+            "শ্রেণি সমবায়ে, তুল্য তড়িচ্চালক বল E_eq = 4 V + 2 V = 6 V।<br>তুল্য অভ্যন্তরীণ রোধ r_eq = 1 Ω + 0.5 Ω = 1.5 Ω।<br>বহির্বর্তনীর রোধ R = 9.5 Ω।<br><br>মোট রোধ = R + r_eq = 9.5 Ω + 1.5 Ω = 11 Ω।<br>তড়িৎ প্রবাহ (I) = E_eq / (R + r_eq) = 6 V / 11 Ω ≈ <b>0.55 A</b>।",
+        },
+        {
+          id: 44,
+          question: "দুটি রোধ 2Ω এবং 3Ω এর সমান্তরাল সমবায়ের তুল্য রোধ কত?",
+          options: {
+            a: "1.2 Ω",
+            b: "5 Ω",
+            c: "2.5 Ω",
+            d: "1.5 Ω",
+          },
+          correct: "a",
+          explanation:
+            "সমান্তরাল সমবায়ে তুল্য রোধ (R_eq) নির্ণয়ের সূত্র: R_eq = (R₁ × R₂)/(R₁ + R₂)।<br>R_eq = (2 × 3)/(2 + 3) = 6/5 = <b>1.2 Ω</b>।",
+        },
+        {
+          id: 45,
+          question: "দুটি রোধ 3Ω এবং 6Ω এর সমান্তরাল সমবায়ের তুল্য রোধ কত?",
+          options: {
+            a: "2 Ω",
+            b: "9 Ω",
+            c: "4.5 Ω",
+            d: "1.5 Ω",
+          },
+          correct: "a",
+          explanation:
+            "সমান্তরাল সমবায়ে তুল্য রোধ (R_eq) নির্ণয়ের সূত্র: R_eq = (R₁ × R₂)/(R₁ + R₂)।<br>R_eq = (3 × 6)/(3 + 6) = 18/9 = <b>2 Ω</b>।",
+        },
+        {
+          id: 46,
+          question:
+            "হুইটস্টোন ব্রিজের সুষম অবস্থায় P = 4Ω, Q = 6Ω এবং R = 8Ω হলে, S এর মান কত?",
+          options: {
+            a: "12 Ω",
+            b: "10 Ω",
+            c: "8 Ω",
+            d: "6 Ω",
+          },
+          correct: "a",
+          explanation:
+            "হুইটস্টোন ব্রিজের সুষম অবস্থায়: P/Q = R/S।<br>4/6 = 8/S।<br>2/3 = 8/S।<br>S = 8 × 3 / 2 = <b>12 Ω</b>।",
+        },
+        {
+          id: 47,
+          question:
+            "হুইটস্টোন ব্রিজের সুষম অবস্থায় P = 10Ω, Q = 15Ω এবং S = 12Ω হলে, R এর মান কত?",
+          options: {
+            a: "8 Ω",
+            b: "10 Ω",
+            c: "12 Ω",
+            d: "18 Ω",
+          },
+          correct: "a",
+          explanation:
+            "হুইটস্টোন ব্রিজের সুষম অবস্থায়: P/Q = R/S।<br>10/15 = R/12।<br>2/3 = R/12।<br>R = 12 × 2 / 3 = <b>8 Ω</b>।",
+        },
+        {
+          id: 48,
+          question:
+            "একটি মিটার ব্রিজে 100 সেমি দৈর্ঘ্যের তারের 40 সেমি বিন্দুতে সুষম অবস্থা পাওয়া যায়। যদি বাম দিকে 12 Ω রোধ থাকে, তবে ডান দিকের রোধ কত?",
+          options: {
+            a: "8 Ω",
+            b: "12 Ω",
+            c: "18 Ω",
+            d: "20 Ω",
+          },
+          correct: "c",
+          explanation:
+            "মিটার ব্রিজে সুষম অবস্থায় রোধের অনুপাত তারের দৈর্ঘ্যের অনুপাতের সমান।<br>ধরি, বাম দিকের রোধ R₁ = 12 Ω এবং ডান দিকের রোধ R₂।<br>বাম দিকের দৈর্ঘ্য l₁ = 40 সেমি এবং ডান দিকের দৈর্ঘ্য l₂ = 100 - 40 = 60 সেমি।<br><br>সুষম অবস্থায়: R₁/R₂ = l₁/l₂।<br>12/R₂ = 40/60 = 2/3।<br>R₂ = 12 × 3 / 2 = <b>18 Ω</b>।",
+        },
+        {
+          id: 49,
+          question:
+            "একটি গ্যালভানোমিটারের কুণ্ডলীর রোধ 25 Ω এবং এটি 0.01 A তড়িৎ প্রবাহে পূর্ণ বিচ্যুতি দেখায়। এটিকে 100 V পরিমাপের জন্য ভোল্টমিটারে রূপান্তর করতে কত রোধ সিরিজে যুক্ত করতে হবে?",
+          options: {
+            a: "975 Ω",
+            b: "9975 Ω",
+            c: "1000 Ω",
+            d: "10000 Ω",
+          },
+          correct: "b",
+          explanation:
+            "গ্যালভানোমিটারকে ভোল্টমিটারে রূপান্তর করতে সিরিজে একটি উচ্চ রোধ (R_s) যুক্ত করতে হয়।<br>সূত্র: V = I_g × (R_g + R_s)।<br><br>100 = 0.01 × (25 + R_s)।<br>10000 = 25 + R_s।<br>R_s = 10000 - 25 = <b>9975 Ω</b>।",
+        },
+        {
+          id: 50,
+          question:
+            "একটি গ্যালভানোমিটারের কুণ্ডলীর রোধ 50 Ω এবং এটি 0.02 A তড়িৎ প্রবাহে পূর্ণ বিচ্যুতি দেখায়। এটিকে 10 A পরিমাপের জন্য অ্যামিটারে রূপান্তর করতে কত রোধ সমান্তরালে যুক্ত করতে হবে?",
+          options: {
+            a: "0.1 Ω",
+            b: "0.01 Ω",
+            c: "0.5 Ω",
+            d: "1 Ω",
+          },
+          correct: "a",
+          explanation:
+            "গ্যালভানোমিটারকে অ্যামিটারে রূপান্তর করতে সমান্তরালে একটি কম রোধ (শান্ট, R_sh) যুক্ত করতে হয়।<br>সূত্র: I_g × R_g = (I - I_g) × R_sh।<br><br>0.02 × 50 = (10 - 0.02) × R_sh।<br>1 = 9.98 × R_sh।<br>R_sh = 1 / 9.98 ≈ <b>0.1 Ω</b>।",
+        },
+        {
+          id: 51,
+          question:
+            "একটি গ্যালভানোমিটারের রোধ 100 Ω এবং এটি 0.01 A তড়িৎ প্রবাহে পূর্ণ বিচ্যুতি দেখায়। এটিকে 5 A পরিমাপের জন্য অ্যামিটারে রূপান্তর করতে কত রোধ সমান্তরালে যুক্ত করতে হবে?",
+          options: {
+            a: "0.02 Ω",
+            b: "0.2 Ω",
+            c: "2 Ω",
+            d: "0.002 Ω",
+          },
+          correct: "b",
+          explanation:
+            "গ্যালভানোমিটারকে অ্যামিটারে রূপান্তর করতে সমান্তরালে একটি শান্ট রোধ (R_sh) যুক্ত করতে হয়।<br>সূত্র: I_g × R_g = (I - I_g) × R_sh।<br><br>0.01 × 100 = (5 - 0.01) × R_sh।<br>1 = 4.99 × R_sh।<br>R_sh = 1 / 4.99 ≈ <b>0.2 Ω</b>।",
+        },
+        {
+          id: 52,
+          question:
+            "একটি গ্যালভানোমিটারের রোধ 20 Ω এবং এটি 0.05 A তড়িৎ প্রবাহে পূর্ণ বিচ্যুতি দেখায়। এটিকে 50 V পরিমাপের জন্য ভোল্টমিটারে রূপান্তর করতে কত রোধ সিরিজে যুক্ত করতে হবে?",
+          options: {
+            a: "980 Ω",
+            b: "1000 Ω",
+            c: "1020 Ω",
+            d: "960 Ω",
+          },
+          correct: "a",
+          explanation:
+            "গ্যালভানোমিটারকে ভোল্টমিটারে রূপান্তর করতে সিরিজে একটি উচ্চ রোধ (R_s) যুক্ত করতে হয়।<br>সূত্র: V = I_g × (R_g + R_s)।<br><br>50 = 0.05 × (20 + R_s)।<br>1000 = 20 + R_s।<br>R_s = 1000 - 20 = <b>980 Ω</b>।",
+        },
+        {
+          id: 53,
+          question: "একটি 60 W - 220 V এর বাল্বের ফিলামেন্টের রোধ কত?",
+          options: {
+            a: "806.67 Ω",
+            b: "403.33 Ω",
+            c: "201.67 Ω",
+            d: "100.83 Ω",
+          },
+          correct: "a",
+          explanation:
+            "ক্ষমতা (P) = V²/R।<br>সুতরাং, রোধ (R) = V²/P।<br><br>R = (220)² / 60 = 48400 / 60 ≈ <b>806.67 Ω</b>।",
+        },
+        {
+          id: 54,
+          question: "একটি 100 W - 220 V এর বাল্বের ফিলামেন্টের রোধ কত?",
+          options: {
+            a: "484 Ω",
+            b: "242 Ω",
+            c: "121 Ω",
+            d: "60.5 Ω",
+          },
+          correct: "a",
+          explanation:
+            "ক্ষমতা (P) = V²/R।<br>সুতরাং, রোধ (R) = V²/P।<br><br>R = (220)² / 100 = 48400 / 100 = <b>484 Ω</b>।",
+        },
+        {
+          id: 55,
+          question:
+            "একটি পরিবাহীর মধ্য দিয়ে 5 মিনিটে 1200 C চার্জ প্রবাহিত হলে তড়িৎ প্রবাহ কত?",
+          options: {
+            a: "2 A",
+            b: "4 A",
+            c: "6 A",
+            d: "8 A",
+          },
+          correct: "b",
+          explanation:
+            "তড়িৎ প্রবাহ (I) = চার্জ (Q) / সময় (t)।<br>এখানে, Q = 1200 C, t = 5 মিনিট = 5 × 60 = 300 সেকেন্ড।<br><br>I = 1200 C / 300 s = <b>4 A</b>।",
+        },
+        {
+          id: 56,
+          question:
+            "একটি গ্যালভানোমিটারের রোধ 10 Ω এবং এটি 0.01 A তড়িৎ প্রবাহে পূর্ণ বিচ্যুতি দেখায়। এটিকে 1 A পরিমাপের জন্য অ্যামিটারে রূপান্তর করতে কত রোধ সমান্তরালে যুক্ত করতে হবে?",
+          options: {
+            a: "0.1 Ω",
+            b: "0.101 Ω",
+            c: "0.001 Ω",
+            d: "1 Ω",
+          },
+          correct: "b",
+          explanation:
+            "গ্যালভানোমিটারকে অ্যামিটারে রূপান্তর করতে সমান্তরালে একটি শান্ট রোধ (R_sh) যুক্ত করতে হয়।<br>সূত্র: I_g × R_g = (I - I_g) × R_sh।<br><br>0.01 × 10 = (1 - 0.01) × R_sh।<br>0.1 = 0.99 × R_sh।<br>R_sh = 0.1 / 0.99 ≈ <b>0.101 Ω</b>।",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                    <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                    </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
